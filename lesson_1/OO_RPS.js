@@ -108,3 +108,4 @@ let compare = function(move1, move2) {
 } */
 
 RPSGame.play();
+
