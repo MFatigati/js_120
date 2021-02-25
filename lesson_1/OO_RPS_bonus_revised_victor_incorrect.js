@@ -83,8 +83,10 @@ const RPSGame = {
       // the successive loops
       let humanMove = this.human.move;
       let computerMove = this.computer.move;
+      /* this.humanMove = this.human.move;
+      this.computerMove = this.computer.move; */
       //console.log(this.computerMove + "test");
-      let gameWinner = this.rules.returnMoveWinner(humanMove, computerMove);
+      let gameWinner = this.rules.returnMoveWinner();
 
       this.human.updateMovesHistory();
       this.computer.updateMovesHistory();
@@ -238,10 +240,10 @@ function createRules() {
       Spock: {defeats: ['rock', 'scissors']}
     },
 
-    returnMoveWinner(humanMove, computerMove) {
-      if (this.winningCombos[humanMove].defeats.includes(computerMove)) {
+    returnMoveWinner() {
+      if (this.winningCombos[this.humanMove].defeats.includes(this.computerMove)) {
         return "human";
-      } else if (humanMove === computerMove) {
+      } else if (this.humanMove === this.computerMove) {
         return "tie";
       } else {
         return "computer";

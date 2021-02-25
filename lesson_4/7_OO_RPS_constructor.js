@@ -2,12 +2,15 @@
 
 const readline = require('readline-sync');
 
-const RPSGame = {
-  human: createHuman(),
-  computer: createComputer(),
-  score: createScore(),
-  rules: createRules(),
+function RPSGame() {
+  this.human = new CreateHuman();
+  this.computer = new CreateComputer();
+  this.score = new CreateScore();
+  this.rules = new CreateRules();
+}
 
+RPSGame.prototype = {
+  
   displayWelcomeMessage() {
     console.log('Welcome to Rock, Paper, Scissors!');
   },
@@ -57,9 +60,7 @@ const RPSGame = {
 
   matchOver() {
     if (this.score.human === 5 || this.score.computer === 5) {
-      if (this.score.human === 5) {
-        return true;
-      }
+      return true;
     }
     return false;
   },
@@ -81,12 +82,10 @@ const RPSGame = {
       // note to self: each loop updates each player's movesHistory property,
       // whose value is an object, which is why the updates are retained over
       // the successive loops
-      /* let humanMove = this.human.move;
-      let computerMove = this.computer.move; */
-      this.humanMove = this.human.move;
-      this.computerMove = this.computer.move;
+      let humanMove = this.human.move;
+      let computerMove = this.computer.move;
       //console.log(this.computerMove + "test");
-      let gameWinner = this.rules.returnMoveWinner();
+      let gameWinner = this.rules.returnMoveWinner(humanMove, computerMove);
 
       this.human.updateMovesHistory();
       this.computer.updateMovesHistory();
@@ -108,12 +107,15 @@ const RPSGame = {
   }
 };
 
-function createScore() {
-  return {
-    human: 0,
-    computer: 0,
-    ties: 0,
+RPSGame.prototype.constructor = RPSGame;
 
+function CreateScore() {
+  this.human = 0;
+  this.computer = 0;
+  this.ties = 0;
+}
+
+CreateScore.prototype = {
     totalGamesPlayed() {
       return this.human + this.computer + this.ties;
     },
@@ -138,35 +140,37 @@ function createScore() {
       this.ties = 0;
     }
   };
-}
 
+CreateScore.prototype.constructor = CreateScore;
 
-function createPlayer() {
-  return {
-    move: null,
-    movesHistory: {
+function CreatePlayer() {
+    this.move = null;
+    this.movesHistory = {
       rock: 0, paper: 0, scissors: 0, lizard: 0, Spock: 0
-    },
-    updateMovesHistory() {
-      this.movesHistory[this.move] += 1;
-    }
+    };
   };
+
+CreatePlayer.prototype.updateMovesHistory = function() {
+  this.movesHistory[this.move] += 1;
 }
 
-function createComputer() {
-  let playerObject = createPlayer();
-  let rules = createRules();
+function CreateComputer() {
+  CreatePlayer.call(this);
+  let rules = new CreateRules();
+  this.computerWeightedChoices = rules.choices.slice();
+}
 
-  let computerObject = {
-    computerWeightedChoices: rules.choices.slice(),
+CreateComputer.prototype = Object.create(CreatePlayer.prototype);
 
-    choose() {
+CreateComputer.prototype.constructor = CreateComputer;
+
+CreateComputer.prototype.choose = function() {
       let randomIndex = Math.floor(Math.random() *
         this.computerWeightedChoices.length);
       this.move = this.computerWeightedChoices[randomIndex];
-    },
+    };
 
-    updateComputerWeightedChoices(playerMove, gameWinner,
+CreateComputer.prototype.updateComputerWeightedChoices = function(playerMove, gameWinner,
       humanMovesHistory, score, winningCombos) {
       let totalMoves = score.totalGamesPlayed();
       let currentPlayerMoveOccurencesCount = humanMovesHistory[playerMove];
@@ -182,17 +186,20 @@ function createComputer() {
           }
         }
       }
-    },
-  };
-  return Object.assign(playerObject, computerObject);
+    };
+
+/* let playa = new CreatePlayer();
+let comp = new CreateComputer();
+debugger */
+
+function CreateHuman() {
+  CreatePlayer.call(this);
 }
 
-function createHuman() {
-  let playerObject = createPlayer();
+CreateHuman.prototype = Object.create(CreatePlayer.prototype);
+CreateHuman.prototype.constructor = CreateHuman;
 
-  let humanObject = {
-
-    choose() {
+CreateHuman.prototype.choose = function() {
       let choice;
 
       while (true) {
@@ -202,14 +209,14 @@ function createHuman() {
       }
 
       this.move = this.returnFullChoice(choice);
-    },
+    };
 
-    validChoice(choice) {
+CreateHuman.prototype.validChoice = function(choice) {
       let validChoices = ['rock', 'paper', 'scissors', 'lizard', 'Spock', 'r', 'p', 's', 'l', 'Sp'];
       return validChoices.includes(choice);
-    },
+    };
 
-    returnFullChoice(choice) {
+CreateHuman.prototype.returnFullChoice = function(choice) {
       let conversions = {
         r: 'rock',
         p: 'paper',
@@ -220,37 +227,33 @@ function createHuman() {
       if (choice.length < 3) {
         return conversions[choice];
       } else return choice;
-    }
-  };
+    };
 
-  return Object.assign(playerObject, humanObject);
-}
-
-function createRules() {
-  return {
-    choices: ['rock', 'paper', 'scissors', 'lizard', 'Spock'],
+function CreateRules() {
+  this.choices = ['rock', 'paper', 'scissors', 'lizard', 'Spock'];
     // note to self: was able to make use of this `choices` array
     // rather than making it a global constant by calling the
     // function createRules in other objects
-    winningCombos: {
+  this.winningCombos = {
       rock: {defeats: ['scissors', 'lizard']},
       paper: {defeats: ['rock', 'Spock']},
       scissors: {defeats: ['paper', 'lizard']},
       lizard: {defeats: ['Spock', 'paper']},
       Spock: {defeats: ['rock', 'scissors']}
-    },
+    }
+  }
 
-    returnMoveWinner() {
-      if (this.winningCombos[this.humanMove].defeats.includes(this.computerMove)) {
+CreateRules.prototype.returnMoveWinner = function (humanMove, computerMove) {
+      if (this.winningCombos[humanMove].defeats.includes(computerMove)) {
         return "human";
-      } else if (this.humanMove === this.computerMove) {
+      } else if (humanMove === computerMove) {
         return "tie";
       } else {
         return "computer";
       }
-    },
+    };
 
-    acceptInitialRules() {
+CreateRules.prototype.acceptInitialRules = function() {
       console.log(`In the following take on the classic game Rock, Paper, Scissors, you will also be able to choose lizard and Spock. The winning combinations are as follows:`);
       insertLineBreak();
       for (let move in this.winningCombos) {
@@ -266,13 +269,11 @@ function createRules() {
         }
         return ready === 'y';
       }
-    }
-
-  };
-}
+    };
 
 function insertLineBreak() {
   console.log(" ");
 }
 
-RPSGame.play();
+let game = new RPSGame();
+game.play();
