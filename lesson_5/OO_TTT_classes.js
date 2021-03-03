@@ -104,6 +104,27 @@ class Board {
 
     return markers.length;
   }
+
+  joinOr(inputArr, delimeter = ",", finalDelimeter = "or") {
+    delimeter = delimeter.trim() + " ";
+    finalDelimeter = finalDelimeter.trim() + " ";
+
+    if (inputArr.length <= 2) {
+      finalDelimeter = " " + finalDelimeter;
+      return inputArr.join(finalDelimeter);
+    } else {
+      let firstPart = inputArr.slice(0, inputArr.length - 1).
+        join(delimeter) + delimeter;
+      return firstPart + finalDelimeter + inputArr[inputArr.length - 1];
+    }
+  }
+
+  reset() {
+    this.squares = {};
+    for (let counter = 1; counter <= 9; counter += 1) {
+      this.squares[counter] = new Square();
+    }
+  }
 }
 
 class Player {
@@ -152,20 +173,26 @@ class TTTGame {
 
       while (true) {
 
-        this.humanMoves();
-        if (this.gameOver()) break;
+        while (true) {
 
-        this.computerMoves();
-        if (this.gameOver()) break;
+          this.humanMoves();
+          if (this.gameOver()) break;
+
+          this.computerMoves();
+          if (this.gameOver()) break;
+
+          this.board.displayWithClear();
+        }
 
         this.board.displayWithClear();
-      }
+        this.displayResults();
+        if (!this.playAgain()) break;
 
-      this.board.displayWithClear();
-      this.displayResults();
+        this.board.reset();
+        this.board.displayWithClear();
+      }
       this.displayGoodbyeMessage();
     }
-
 
     displayWelcomeMessage() {
       console.clear();
@@ -173,7 +200,9 @@ class TTTGame {
     }
 
     displayGoodbyeMessage() {
+      console.clear();
       console.log("Thanks for playing Tic Tac Toe! Goodbye!");
+      console.log(" ");
     }
 
     displayResults() {
@@ -197,7 +226,7 @@ class TTTGame {
 
       while (true) {
         let validChoices = this.board.unusedSquares();
-        console.log(`Choose a square: ${validChoices}`);
+        console.log(`Choose a square: ${this.board.joinOr(validChoices)}`);
         choice = readline.prompt();
 
         if (validChoices.includes(choice)) break;
@@ -229,6 +258,15 @@ class TTTGame {
 
     someoneWon() {
       return this.isWinner(this.human) || this.isWinner(this.computer);
+    }
+
+    playAgain() {
+      console.log(" ")
+      let choice = readline.question(`Do you want to play again? (y/n)`);
+      while (choice !== "y" && choice !== "n") {
+        choice = readline.question(`Invalid choice. Please enter 'y' or 'n'`);
+      }
+      return choice === 'y';
     }
 }
 
