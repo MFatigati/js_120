@@ -195,6 +195,7 @@ class TTTGame {
         this.board.reset();
         this.board.displayWithClear();
       }
+
       this.displayGoodbyeMessage();
     }
 
@@ -249,11 +250,29 @@ class TTTGame {
       let validChoices = this.board.unusedSquares();
       let choice;
 
-      do {
-        choice = Math.floor((9 * Math.random()) + 1).toString();
+      if (this.computerRecognizeThreatenedSquare()) {
+        choice = this.computerRecognizeThreatenedSquare();
+      } else {
+        do {
+          choice = Math.floor((9 * Math.random()) + 1).toString();
+        }
+        while (!validChoices.includes(choice));
       }
-      while (!validChoices.includes(choice));
       this.board.markSquareAt(choice, this.computer.getMarker());
+    }
+
+    computerRecognizeThreatenedSquare() {
+      let squareToDefend;
+      TTTGame.POSSIBLE_WINNING_ROWS.forEach(row => {
+        if (this.board.countMarkersFor(this.human, row) === 2) {
+          row.forEach(square => {
+            if (this.board.unusedSquares().includes(square)) {
+              squareToDefend = square;
+            }
+          });
+        }
+      });
+      return squareToDefend;
     }
 
     gameOver() {
@@ -265,7 +284,7 @@ class TTTGame {
     }
 
     playAgain() {
-      console.log(" ")
+      console.log(" ");
       let choice = readline.question(`Do you want to play again? (y/n)`);
       while (choice !== "y" && choice !== "n") {
         choice = readline.question(`Invalid choice. Please enter 'y' or 'n'`);
