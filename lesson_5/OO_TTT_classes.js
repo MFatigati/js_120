@@ -264,31 +264,27 @@ class TTTGame {
     }
 
     computerReturnThreatenedSquare() {
-      let threatenedSquare;
-      TTTGame.POSSIBLE_WINNING_ROWS.forEach(row => {
-        if (this.board.countMarkersFor(this.human, row) === 2) {
-          row.forEach(square => {
-            if (this.board.unusedSquares().includes(square)) {
-              threatenedSquare = square;
-            }
-          });
-        }
-      });
+      let threatenedSquare = this.findCriticalSquareForPlayer(this.human);
       return threatenedSquare;
     }
 
     computerReturnSquareToWin() {
-      let squareToWin;
+      let squareToWin = this.findCriticalSquareForPlayer(this.computer);
+      return squareToWin;
+    }
+
+    findCriticalSquareForPlayer(player) {
+      let criticalSquare;
       TTTGame.POSSIBLE_WINNING_ROWS.forEach(row => {
-        if (this.board.countMarkersFor(this.computer, row) === 2) {
+        if (this.board.countMarkersFor(player, row) === 2) {
           row.forEach(square => {
             if (this.board.unusedSquares().includes(square)) {
-              squareToWin = square;
+              criticalSquare = square;
             }
           });
         }
       });
-      return squareToWin;
+      return criticalSquare;
     }
 
     isFiveAvailable() {
