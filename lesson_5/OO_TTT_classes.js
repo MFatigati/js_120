@@ -252,7 +252,7 @@ class TTTGame {
 
           this.human.humanMoves(this.board, this.human);
           if (this.gameOver()) break;
-          
+
         }
 
         this.board.displayWithClear();
