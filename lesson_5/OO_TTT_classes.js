@@ -167,22 +167,26 @@ class TTTGame {
       [ "3", "5", "7" ],            // diagonal: bottom-left to top-right
     ];
 
+    playOneGame() {
+      while (true) {
+
+        this.humanMoves();
+        if (this.gameOver()) break;
+
+        this.computerMoves();
+        if (this.gameOver()) break;
+
+        this.board.displayWithClear();
+      }
+    }
+
     play() {
       this.displayWelcomeMessage();
       this.board.display();
 
       while (true) {
 
-        while (true) {
-
-          this.humanMoves();
-          if (this.gameOver()) break;
-
-          this.computerMoves();
-          if (this.gameOver()) break;
-
-          this.board.displayWithClear();
-        }
+        this.playOneGame();
 
         this.board.displayWithClear();
         this.displayResults();
