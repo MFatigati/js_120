@@ -1,26 +1,3 @@
-/* Tic Tac Toe is a 2-player board game.
-The board is a 3x3 grid.
-Players take turns marking a square with a marker that identifies the player.
-Traditionally, the player to go first uses the marker X to mark her squares, and
-  the player to go second uses the marker O.
-The first player to mark 3 squares in a row with her marker wins the game.
-A row can be a horizontal row, a vertical column, or either of the two diagonals
-  (top-left to bottom-right and top-right to bottom-left).
-There is one human player and one computer player.
-The human player always moves (places a marker) first in the initial version of
-  our game; you can change that later. */
-
-// Game (n)
-// Board (n)
-// Row (n)
-// Square (n)
-// Marker (n)
-// Player (n)
-// Mark (v)
-// Play (v)
-// Human (n)
-// Computer (n)
-
 let readline = require("readline-sync");
 
 class Square {
@@ -125,6 +102,20 @@ class Board {
       this.squares[counter] = new Square();
     }
   }
+
+  findCriticalSquareForPlayer(currentBoard, player, possibleWinningRows) {
+    let criticalSquare;
+    possibleWinningRows.forEach(row => {
+      if (currentBoard.countMarkersFor(player, row) === 2) {
+        row.forEach(square => {
+          if (currentBoard.unusedSquares().includes(square)) {
+            criticalSquare = square;
+          }
+        });
+      }
+    });
+    return criticalSquare;
+  }
 }
 
 class Player {
@@ -142,12 +133,67 @@ class Human extends Player {
     super(Square.HUMAN_MARKER);
     this.first = false;
   }
+
+  humanMoves(currentBoard, currentHuman) {
+    let choice;
+
+    while (true) {
+      let validChoices = currentBoard.unusedSquares();
+      console.log(`Choose a square: ${currentBoard.joinOr(validChoices)}`);
+      choice = readline.prompt();
+
+      if (validChoices.includes(choice)) break;
+
+      console.log("Sorry, that's not a valid choice.");
+      console.log("");
+    }
+
+    currentBoard.markSquareAt(choice, currentHuman.getMarker());
+    // accessing the Board object on TTTGame, which has access
+    // to the markSquareAt method, which itself calls
+    // setMarker on the Square objects that populate the Board
+  }
 }
 
 class Computer extends Player {
   constructor() {
     super(Square.COMPUTER_MARKER);
     this.first = false;
+  }
+
+  computerMoves(currentBoard, currentHuman, currentComputer, possibleWinningRows) { // eslint-disable-line max-len
+    let validChoices = currentBoard.unusedSquares();
+    let choice = currentComputer.computerReturnSquareToWin(currentBoard, currentComputer, possibleWinningRows); // eslint-disable-line max-len
+    if (!choice) {
+      choice = currentComputer.computerReturnThreatenedSquare(currentBoard, currentHuman, possibleWinningRows); // eslint-disable-line max-len
+    }
+    if (!choice && currentComputer.isFiveAvailable(currentBoard, currentHuman, currentComputer, possibleWinningRows)) { // eslint-disable-line max-len
+      choice = ['5'];
+    }
+    if (!choice) {
+      do {
+        choice = Math.floor((9 * Math.random()) + 1).toString();
+      }
+      while (!validChoices.includes(choice));
+    }
+    currentBoard.markSquareAt(choice, currentComputer.getMarker());
+  }
+
+  computerReturnThreatenedSquare(currentBoard, currentHuman, possibleWinningRows) { // eslint-disable-line max-len
+    let threatenedSquare = currentBoard.findCriticalSquareForPlayer(currentBoard, currentHuman, possibleWinningRows); // eslint-disable-line max-len
+    return threatenedSquare;
+  }
+
+  computerReturnSquareToWin(currentBoard, currentComputer, possibleWinningRows) { // eslint-disable-line max-len
+    let squareToWin = currentBoard.findCriticalSquareForPlayer(currentBoard, currentComputer, possibleWinningRows); // eslint-disable-line max-len
+    return squareToWin;
+  }
+
+  isFiveAvailable(currentBoard, currentHuman, currentComputer) {
+    if (currentBoard.squares["5"].getMarker() === currentHuman.getMarker() ||
+        currentBoard.squares["5"].getMarker() === currentComputer.getMarker()) {
+      return false;
+    } else return true;
   }
 }
 
@@ -169,21 +215,44 @@ class TTTGame {
       [ "3", "5", "7" ],            // diagonal: bottom-left to top-right
     ];
 
+    play() {
+      this.displayWelcomeMessage();
+      this.board.display();
+
+      while (true) {
+
+        this.swapWhoIsFirst();
+        this.playOneGame();
+        this.board.displayWithClear();
+        this.displayResults();
+        if (!this.playAgain()) break;
+
+        this.board.reset();
+        this.board.displayWithClear();
+      }
+
+      this.displayGoodbyeMessage();
+    }
+
     playOneGame() {
       while (true) {
         if (this.human.first === true) {
-          this.humanMoves();
+
+          this.human.humanMoves(this.board, this.human);
           if (this.gameOver()) break;
 
-          this.computerMoves();
+          this.computer.computerMoves(this.board, this.human, this.computer, TTTGame.POSSIBLE_WINNING_ROWS); // eslint-disable-line max-len
           if (this.gameOver()) break;
+
         } else if (this.computer.first === true) {
-          this.computerMoves();
+
+          this.computer.computerMoves(this.board, this.human, this.computer, TTTGame.POSSIBLE_WINNING_ROWS); // eslint-disable-line max-len
           if (this.gameOver()) break;
           this.board.displayWithClear();
 
-          this.humanMoves();
+          this.human.humanMoves(this.board, this.human);
           if (this.gameOver()) break;
+          
         }
 
         this.board.displayWithClear();
@@ -198,26 +267,6 @@ class TTTGame {
         this.human.first = false;
         this.computer.first = true;
       }
-    }
-
-    play() {
-      this.displayWelcomeMessage();
-      this.board.display();
-
-      while (true) {
-
-        this.swapWhoIsFirst();
-        this.playOneGame();
-
-        this.board.displayWithClear();
-        this.displayResults();
-        if (!this.playAgain()) break;
-
-        this.board.reset();
-        this.board.displayWithClear();
-      }
-
-      this.displayGoodbyeMessage();
     }
 
     displayWelcomeMessage() {
@@ -245,75 +294,6 @@ class TTTGame {
       return TTTGame.POSSIBLE_WINNING_ROWS.some(row => {
         return this.board.countMarkersFor(player, row) === 3;
       });
-    }
-
-    humanMoves() {
-      let choice;
-
-      while (true) {
-        let validChoices = this.board.unusedSquares();
-        console.log(`Choose a square: ${this.board.joinOr(validChoices)}`);
-        choice = readline.prompt();
-
-        if (validChoices.includes(choice)) break;
-
-        console.log("Sorry, that's not a valid choice.");
-        console.log("");
-      }
-
-      this.board.markSquareAt(choice, this.human.getMarker());
-      // accessing the Board object on TTTGame, which has access
-      // to the markSquareAt method, which itself calls
-      // setMarker on the Square objects that populate the Board
-    }
-
-    computerMoves() {
-      let validChoices = this.board.unusedSquares();
-      let choice = this.computerReturnSquareToWin();
-      if (!choice) {
-        choice = this.computerReturnThreatenedSquare();
-      }
-      if (!choice && this.isFiveAvailable()) {
-        choice = ['5'];
-      }
-      if (!choice) {
-        do {
-          choice = Math.floor((9 * Math.random()) + 1).toString();
-        }
-        while (!validChoices.includes(choice));
-      }
-      this.board.markSquareAt(choice, this.computer.getMarker());
-    }
-
-    computerReturnThreatenedSquare() {
-      let threatenedSquare = this.findCriticalSquareForPlayer(this.human);
-      return threatenedSquare;
-    }
-
-    computerReturnSquareToWin() {
-      let squareToWin = this.findCriticalSquareForPlayer(this.computer);
-      return squareToWin;
-    }
-
-    findCriticalSquareForPlayer(player) {
-      let criticalSquare;
-      TTTGame.POSSIBLE_WINNING_ROWS.forEach(row => {
-        if (this.board.countMarkersFor(player, row) === 2) {
-          row.forEach(square => {
-            if (this.board.unusedSquares().includes(square)) {
-              criticalSquare = square;
-            }
-          });
-        }
-      });
-      return criticalSquare;
-    }
-
-    isFiveAvailable() {
-      if (this.board.squares["5"].getMarker() === this.human.getMarker() ||
-          this.board.squares["5"].getMarker() === this.computer.getMarker()) {
-        return false;
-      } else return true;
     }
 
     gameOver() {
