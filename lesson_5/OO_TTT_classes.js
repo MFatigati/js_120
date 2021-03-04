@@ -140,12 +140,14 @@ class Player {
 class Human extends Player {
   constructor() {
     super(Square.HUMAN_MARKER);
+    this.first = false;
   }
 }
 
 class Computer extends Player {
   constructor() {
     super(Square.COMPUTER_MARKER);
+    this.first = false;
   }
 }
 
@@ -169,13 +171,32 @@ class TTTGame {
 
     playOneGame() {
       while (true) {
-        this.humanMoves();
-        if (this.gameOver()) break;
+        if (this.human.first === true) {
+          this.humanMoves();
+          if (this.gameOver()) break;
 
-        this.computerMoves();
-        if (this.gameOver()) break;
+          this.computerMoves();
+          if (this.gameOver()) break;
+        } else if (this.computer.first === true) {
+          this.computerMoves();
+          if (this.gameOver()) break;
+          this.board.displayWithClear();
+
+          this.humanMoves();
+          if (this.gameOver()) break;
+        }
 
         this.board.displayWithClear();
+      }
+    }
+
+    swapWhoIsFirst() {
+      if (this.human.first === false) {
+        this.human.first = true;
+        this.computer.first = false;
+      } else {
+        this.human.first = false;
+        this.computer.first = true;
       }
     }
 
@@ -185,6 +206,7 @@ class TTTGame {
 
       while (true) {
 
+        this.swapWhoIsFirst();
         this.playOneGame();
 
         this.board.displayWithClear();
