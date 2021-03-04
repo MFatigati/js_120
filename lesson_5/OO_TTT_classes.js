@@ -169,7 +169,6 @@ class TTTGame {
 
     playOneGame() {
       while (true) {
-
         this.humanMoves();
         if (this.gameOver()) break;
 
@@ -248,11 +247,14 @@ class TTTGame {
 
     computerMoves() {
       let validChoices = this.board.unusedSquares();
-      let choice;
-
-      if (this.computerRecognizeThreatenedSquare()) {
-        choice = this.computerRecognizeThreatenedSquare();
-      } else {
+      let choice = this.computerReturnSquareToWin();
+      if (!choice) {
+        choice = this.computerReturnThreatenedSquare();
+      }
+      if (!choice && this.isFiveAvailable()) {
+        choice = ['5'];
+      }
+      if (!choice) {
         do {
           choice = Math.floor((9 * Math.random()) + 1).toString();
         }
@@ -261,18 +263,39 @@ class TTTGame {
       this.board.markSquareAt(choice, this.computer.getMarker());
     }
 
-    computerRecognizeThreatenedSquare() {
-      let squareToDefend;
+    computerReturnThreatenedSquare() {
+      let threatenedSquare;
       TTTGame.POSSIBLE_WINNING_ROWS.forEach(row => {
         if (this.board.countMarkersFor(this.human, row) === 2) {
           row.forEach(square => {
             if (this.board.unusedSquares().includes(square)) {
-              squareToDefend = square;
+              threatenedSquare = square;
             }
           });
         }
       });
-      return squareToDefend;
+      return threatenedSquare;
+    }
+
+    computerReturnSquareToWin() {
+      let squareToWin;
+      TTTGame.POSSIBLE_WINNING_ROWS.forEach(row => {
+        if (this.board.countMarkersFor(this.computer, row) === 2) {
+          row.forEach(square => {
+            if (this.board.unusedSquares().includes(square)) {
+              squareToWin = square;
+            }
+          });
+        }
+      });
+      return squareToWin;
+    }
+
+    isFiveAvailable() {
+      if (this.board.squares["5"].getMarker() === this.human.getMarker() ||
+          this.board.squares["5"].getMarker() === this.computer.getMarker()) {
+        return false;
+      } else return true;
     }
 
     gameOver() {
